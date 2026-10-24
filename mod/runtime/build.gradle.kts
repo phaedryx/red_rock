@@ -18,7 +18,23 @@ neoForge {
 }
 
 dependencies {
-    implementation("org.jruby:jruby-complete:$jrubyVersion")
+    compileOnly(project(":loader"))
+
+    // Shipped inside the runtime jar: the language loader (a LIBRARY jar) and JRuby.
+    jarJar(project(":loader"))
+    // jruby-complete's POM says <packaging>bundle</packaging>, so without an explicit jar
+    // artifact Gradle resolves it as POM-only and pulls ~30 unshaded transitive jars instead.
+    jarJar(implementation("org.jruby:jruby-complete") {
+        version {
+            strictly("[$jrubyVersion,10.2)")
+            prefer(jrubyVersion)
+        }
+        artifact {
+            name = "jruby-complete"
+            type = "jar"
+        }
+        isTransitive = false
+    })
 
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
