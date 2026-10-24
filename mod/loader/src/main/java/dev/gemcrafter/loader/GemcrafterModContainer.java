@@ -18,6 +18,14 @@ import org.slf4j.LoggerFactory;
 public final class GemcrafterModContainer extends ModContainer {
     private static final Logger LOGGER = LoggerFactory.getLogger("gemcrafter");
 
+    /**
+     * FML's own "failedtoloadmod" wording, used as the issue's translation key. FML falls back to the
+     * key as the pattern when it has no translation for it, and formats the Ruby message as plain
+     * text. The stock key would render the cause as {@code <java class>: <message>} instead.
+     */
+    private static final String RUBY_LOAD_ISSUE =
+            "{100,modinfo,name} ({100,modinfo,id}) has failed to load correctly\n\u00a77{0}";
+
     private final IEventBus eventBus;
     private final ModuleLayer layer;
 
@@ -45,11 +53,13 @@ public final class GemcrafterModContainer extends ModContainer {
         try {
             bootstrap.load(getModInfo(), eventBus);
         } catch (RubyModLoadError e) {
-            // The displayed issue's text is the cause's message: Ruby terms, no Java frames.
-            throw new ModLoadingException(ModLoadingIssue.error("fml.modloadingissue.failedtoloadmod")
-                    .withCause(e)
-                    .withAffectedMod(getModInfo()));
+            throw new ModLoadingException(rubyLoadIssue(getModInfo(), e));
         }
+    }
+
+    /** The issue players and authors see: Ruby terms only, with no Java cause attached. */
+    static ModLoadingIssue rubyLoadIssue(IModInfo info, RubyModLoadError error) {
+        return ModLoadingIssue.error(RUBY_LOAD_ISSUE, error.getMessage()).withAffectedMod(info);
     }
 
     private static void onEventFailed(

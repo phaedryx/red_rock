@@ -2,12 +2,34 @@ package dev.gemcrafter.runtime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class RubyHostTest {
+    @TempDir
+    Path tmp;
+
+    /** Packs a fixture the way `gemcrafter build` does and returns the root Bootstrap would pass. */
+    private String jarRoot(String name) throws IOException {
+        Path jar = tmp.resolve(name + "-0.1.0.jar");
+        Path lib = Path.of(fixture(name), "lib");
+        try (var zip = new ZipOutputStream(Files.newOutputStream(jar)); var files = Files.list(lib)) {
+            for (Path file : files.toList()) {
+                zip.putNextEntry(new ZipEntry("gemcrafter/ruby/lib/" + file.getFileName()));
+                zip.write(Files.readAllBytes(file));
+                zip.closeEntry();
+            }
+        }
+        return "jar:" + jar.toUri() + "!/gemcrafter/ruby";
+    }
+
     private static String fixture(String name) {
         try {
             return Path.of(RubyHostTest.class.getResource("/fixtures/" + name).toURI()).toString();
@@ -45,6 +67,32 @@ class RubyHostTest {
         assertFalse(e.getMessage().contains(".java"), e.getMessage());
         assertFalse(e.getMessage().contains("org.jruby"), e.getMessage());
         assertFalse(e.getMessage().contains(fixture("broken")), "absolute paths leak: " + e.getMessage());
+    }
+
+    @Test
+    void loadsManifestFromJar() throws IOException {
+        var m = RubyHost.shared().loadMod("hello_gem", jarRoot("hello_gem"), "lib/hello_gem.rb");
+        assertEquals(List.of("ruby_shard"), m.items().stream().map(ItemSpec::id).toList());
+    }
+
+    @Test
+    void syntaxErrorInJarIsReportedInRubyTerms() throws IOException {
+        var e = assertThrows(GemcrafterRubyException.class,
+                () -> RubyHost.shared().loadMod("broken", jarRoot("broken"), "lib/broken.rb"));
+        assertTrue(e.getMessage().startsWith("SyntaxError: lib/broken.rb:3"), e.getMessage());
+        assertFalse(e.getMessage().contains(".jar"), "jar path leaks: " + e.getMessage());
+        assertFalse(e.getMessage().contains(tmp.toString()), "absolute path leaks: " + e.getMessage());
+    }
+
+    @Test
+    void nameErrorInJarShowsOnlyModFrames() throws IOException {
+        var e = assertThrows(GemcrafterRubyException.class,
+                () -> RubyHost.shared().loadMod("raises", jarRoot("raises"), "lib/raises.rb"));
+        assertTrue(e.getMessage().startsWith("NameError: uninitialized constant Raises::NotDefinedAnywhere"),
+                e.getMessage());
+        assertTrue(e.getMessage().contains("\n  from lib/raises.rb:4"), e.getMessage());
+        assertFalse(e.getMessage().contains(".jar"), "jar path leaks: " + e.getMessage());
+        assertFalse(e.getMessage().contains(".java"), e.getMessage());
     }
 
     @Test

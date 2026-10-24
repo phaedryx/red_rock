@@ -3,6 +3,7 @@ package dev.gemcrafter.runtime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
@@ -38,7 +39,8 @@ public final class RubyHost {
     private static RubyHost boot() {
         long start = System.nanoTime();
         var container = new ScriptingContainer(LocalContextScope.CONCURRENT, LocalVariableBehavior.TRANSIENT);
-        container.setClassLoader(RubyHost.class.getClassLoader());
+        container.setClassLoader(new LayeredResourceClassLoader(
+                RubyHost.class.getClassLoader(), ScriptingContainer.class.getClassLoader()));
         container.setLoadPaths(List.of("uri:classloader:/gemcrafter/lib"));
         container.runScriptlet("require 'gemcrafter'");
         LOGGER.info("[gemcrafter] JRuby booted in {} ms", (System.nanoTime() - start) / 1_000_000);
@@ -96,19 +98,28 @@ public final class RubyHost {
 
     private String describe(RaiseException raise, String rubyRoot) {
         Object exception = raise.getException();
-        String prefix = rubyRoot + "/";
+        Pattern rootPrefix = rootPrefix(rubyRoot);
         String className = container.callMethod(container.callMethod(exception, "class"), "name", String.class);
-        String message = container.callMethod(exception, "message", String.class).replace(prefix, "");
-        var text = new StringBuilder(className).append(": ").append(message);
+        String message = container.callMethod(exception, "message", String.class);
+        var text = new StringBuilder(className).append(": ").append(rootPrefix.matcher(message).replaceAll(""));
         List<?> backtrace = container.callMethod(exception, "backtrace", List.class);
         if (backtrace != null) {
             for (Object frame : backtrace) {
-                String line = String.valueOf(frame);
-                if (line.startsWith(prefix)) {
-                    text.append("\n  from ").append(line.substring(prefix.length()));
+                var matcher = rootPrefix.matcher(String.valueOf(frame));
+                if (matcher.lookingAt()) {
+                    text.append("\n  from ").append(matcher.replaceFirst(""));
                 }
             }
         }
         return text.toString();
+    }
+
+    /**
+     * Matches a path up to and including the mod's Ruby root, in whatever spelling JRuby reports it:
+     * {@code jar:file:/x.jar!/gemcrafter/ruby} comes back as {@code ///x.jar!/gemcrafter/ruby}, for one.
+     */
+    private static Pattern rootPrefix(String rubyRoot) {
+        String root = rubyRoot.replaceFirst("^(jar:)?(file:)?/*", "");
+        return Pattern.compile("[^\\s'\"(]*" + Pattern.quote(root + "/"));
     }
 }

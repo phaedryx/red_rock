@@ -8,4 +8,10 @@ public final class RubyModLoadError extends RuntimeException {
     public RubyModLoadError(String rubyMessage) {
         super(rubyMessage, null, false, false);
     }
+
+    /** FML prints causes with {@code toString()}; a Java class name there would leak to authors. */
+    @Override
+    public String toString() {
+        return getMessage();
+    }
 }

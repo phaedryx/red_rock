@@ -14,7 +14,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // MDG only puts NeoForge on the main classpath; the tests need FML's SPI types too.
-    testImplementation("net.neoforged.fancymodloader:loader:4.0.45") { isTransitive = false }
+    testImplementation("net.neoforged.fancymodloader:loader:4.0.45")
 }
 
 tasks.test {
