@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-# Bypasses Gemcrafter's validation to hand Java a manifest of the wrong shape.
+# Bypasses RedRock's validation to hand Java a manifest of the wrong shape.
 module BadManifest
   class Mod
-    include Gemcrafter::Mod
+    include RedRock::Mod
 
     id "bad_manifest"
 

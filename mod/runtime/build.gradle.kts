@@ -5,13 +5,13 @@ plugins {
 
 val jrubyVersion = property("jruby_version") as String
 
-base.archivesName.set("gemcrafter")
+base.archivesName.set("red_rock")
 
 neoForge {
     version = property("neo_version") as String
 
     mods {
-        create("gemcrafter") {
+        create("red_rock") {
             sourceSet(sourceSets.main.get())
         }
     }
@@ -50,20 +50,20 @@ tasks.test {
 }
 
 // The Ruby API in gem/lib is the single source of truth; the runtime ships it as
-// classpath resources so JRuby's `require "gemcrafter"` loads the same code the CLI uses.
+// classpath resources so JRuby's `require "red_rock"` loads the same code the CLI uses.
 tasks.processResources {
-    val props = mapOf("gemcrafter_version" to project.version)
+    val props = mapOf("red_rock_version" to project.version)
     inputs.properties(props)
     filesMatching("META-INF/neoforge.mods.toml") { expand(props) }
     from("../../gem/lib") {
-        into("gemcrafter/lib")
-        exclude("gemcrafter/cli.rb", "gemcrafter/cli/**")
+        into("red_rock/lib")
+        exclude("red_rock/cli.rb", "red_rock/cli/**")
     }
 }
 
 // Seam check: only the version adapter may touch Minecraft/NeoForge APIs.
 val checkSeams by tasks.registering {
-    val sources = fileTree("src/main/java/dev/gemcrafter") {
+    val sources = fileTree("src/main/java/dev/redrock") {
         include("**/*.java")
         exclude("adapter/**")
     }
@@ -72,7 +72,7 @@ val checkSeams by tasks.registering {
         val pattern = Regex("""^\s*import\s+(static\s+)?net\.(minecraft|neoforged)\.""", RegexOption.MULTILINE)
         val offenders = sources.files.filter { pattern.containsMatchIn(it.readText()) }.map { it.name }.sorted()
         if (offenders.isNotEmpty()) {
-            throw GradleException("Minecraft/NeoForge imports outside dev.gemcrafter.adapter: ${offenders.joinToString()}")
+            throw GradleException("Minecraft/NeoForge imports outside dev.redrock.adapter: ${offenders.joinToString()}")
         }
     }
 }

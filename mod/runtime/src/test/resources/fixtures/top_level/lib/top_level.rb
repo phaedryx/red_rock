@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 class RubyShard
-  include Gemcrafter::Item
+  include RedRock::Item
 
   texture "ruby_shard.png"
 end
 
 module TopLevel
   class Mod
-    include Gemcrafter::Mod
+    include RedRock::Mod
 
     id "top_level"
     contents RubyShard

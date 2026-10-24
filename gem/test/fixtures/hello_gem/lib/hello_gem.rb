@@ -2,14 +2,14 @@
 
 module HelloGem
   class RubyShard
-    include Gemcrafter::Item
+    include RedRock::Item
 
     texture "ruby_shard.png"
     stack_size 16
   end
 
   class Mod
-    include Gemcrafter::Mod
+    include RedRock::Mod
 
     id "hello_gem"
     contents RubyShard

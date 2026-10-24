@@ -1,6 +1,6 @@
 subprojects {
-    group = "dev.gemcrafter"
-    version = property("gemcrafter_version") as String
+    group = "dev.redrock"
+    version = property("red_rock_version") as String
 
     repositories {
         mavenCentral()

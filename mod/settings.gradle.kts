@@ -5,6 +5,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = "gemcrafter"
+rootProject.name = "red_rock"
 
 include("loader", "runtime")

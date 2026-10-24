@@ -3,7 +3,7 @@ plugins {
     id("net.neoforged.moddev") version "2.0.148"
 }
 
-base.archivesName.set("gemcrafter-loader")
+base.archivesName.set("red_rock-loader")
 
 neoForge {
     version = property("neo_version") as String

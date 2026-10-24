@@ -4,11 +4,11 @@ require "test_helper"
 
 module ItemFixtures
   class RubyShard
-    include Gemcrafter::Item
+    include RedRock::Item
   end
 
   class Overridden
-    include Gemcrafter::Item
+    include RedRock::Item
 
     texture "shard.png"
     stack_size 16
@@ -23,7 +23,7 @@ class ItemTest < Minitest::Test
     assert_equal "Ruby Shard", ItemFixtures::RubyShard.display_name
     assert_equal 64, ItemFixtures::RubyShard.stack_size
     assert_nil ItemFixtures::RubyShard.texture
-    assert_equal :item, ItemFixtures::RubyShard.gemcrafter_kind
+    assert_equal :item, ItemFixtures::RubyShard.red_rock_kind
   end
 
   def test_overrides
@@ -34,9 +34,9 @@ class ItemTest < Minitest::Test
   end
 
   def test_stack_size_out_of_range
-    err = assert_raises(Gemcrafter::DefinitionError) do
+    err = assert_raises(RedRock::DefinitionError) do
       Class.new do
-        include Gemcrafter::Item
+        include RedRock::Item
 
         stack_size 100
       end
@@ -45,9 +45,9 @@ class ItemTest < Minitest::Test
   end
 
   def test_stack_size_must_be_an_integer
-    err = assert_raises(Gemcrafter::DefinitionError) do
+    err = assert_raises(RedRock::DefinitionError) do
       Class.new do
-        include Gemcrafter::Item
+        include RedRock::Item
 
         stack_size 2.5
       end
@@ -56,9 +56,9 @@ class ItemTest < Minitest::Test
   end
 
   def test_stack_size_zero
-    assert_raises(Gemcrafter::DefinitionError) do
+    assert_raises(RedRock::DefinitionError) do
       Class.new do
-        include Gemcrafter::Item
+        include RedRock::Item
 
         stack_size 0
       end

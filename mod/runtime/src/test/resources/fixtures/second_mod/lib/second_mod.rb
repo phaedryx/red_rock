@@ -2,13 +2,13 @@
 
 module SecondMod
   class Pebble
-    include Gemcrafter::Item
+    include RedRock::Item
 
     texture "pebble.png"
   end
 
   class Mod
-    include Gemcrafter::Mod
+    include RedRock::Mod
 
     id "second_mod"
     contents Pebble

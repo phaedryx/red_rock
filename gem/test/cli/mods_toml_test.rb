@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "gemcrafter/cli"
+require "red_rock/cli"
 
 class ModsTomlTest < Minitest::Test
   EXPECTED = <<~TOML
-    modLoader = "gemcrafter"
+    modLoader = "red_rock"
     loaderVersion = "[0.1,0.2)"
     license = "All Rights Reserved"
 
@@ -18,7 +18,7 @@ class ModsTomlTest < Minitest::Test
     entrypoint = "lib/hello_gem.rb"
 
     [[dependencies.hello_gem]]
-    modId = "gemcrafter"
+    modId = "red_rock"
     type = "required"
     versionRange = "[0.1,0.2)"
     ordering = "AFTER"
@@ -31,12 +31,12 @@ class ModsTomlTest < Minitest::Test
   }.freeze
 
   def test_renders_exact_toml
-    assert_equal EXPECTED, Gemcrafter::CLI::ModsToml.render(manifest: MANIFEST, entrypoint: "lib/hello_gem.rb")
+    assert_equal EXPECTED, RedRock::CLI::ModsToml.render(manifest: MANIFEST, entrypoint: "lib/hello_gem.rb")
   end
 
   def test_escapes_quotes_and_backslashes
-    toml = Gemcrafter::CLI::ModsToml.render(manifest: MANIFEST.merge("display_name" => %(Say "hi" \\o/)),
-                                            entrypoint: "lib/hello_gem.rb")
+    toml = RedRock::CLI::ModsToml.render(manifest: MANIFEST.merge("display_name" => %(Say "hi" \\o/)),
+                                         entrypoint: "lib/hello_gem.rb")
     assert_includes toml, %(displayName = "Say \\"hi\\" \\\\o/"\n)
   end
 end

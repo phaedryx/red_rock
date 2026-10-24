@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # Headless end-to-end smoke test: installs a NeoForge 21.1.264 dedicated server, boots it once
-# without mods (baseline) and once with gemcrafter + hello_gem, and reports the startup cost.
+# without mods (baseline) and once with red_rock + hello_gem, and reports the startup cost.
 #
-# usage: scripts/smoke-server.sh [--keep] [--only-gemcrafter] [--mod-jar JAR] [--expect-failure TEXT]
+# usage: scripts/smoke-server.sh [--keep] [--only-red-rock] [--mod-jar JAR] [--expect-failure TEXT]
 #   --keep               keep the smoke directory (and the installed server) afterwards
-#   --only-gemcrafter    skip the baseline run
+#   --only-red-rock      skip the baseline run
 #   --mod-jar JAR        Ruby mod jar to install (default: examples/hello_gem/pkg/hello_gem-0.1.0.jar)
 #   --expect-failure T   pass only if mod loading fails and the log contains T
 #
-# Needs java 21 on PATH (or JAVA_HOME). Writes to ${GEMCRAFTER_SMOKE_DIR:-$TMPDIR/gemcrafter-smoke}.
+# Needs java 21 on PATH (or JAVA_HOME). Writes to ${RED_ROCK_SMOKE_DIR:-$TMPDIR/red_rock-smoke}.
 set -euo pipefail
 
 NEO_VERSION=21.1.264
 TIMEOUT=300
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SMOKE_DIR="${GEMCRAFTER_SMOKE_DIR:-${TMPDIR:-/tmp}/gemcrafter-smoke}"
+SMOKE_DIR="${RED_ROCK_SMOKE_DIR:-${TMPDIR:-/tmp}/red_rock-smoke}"
 SERVER="$SMOKE_DIR/server"
-RUNTIME_JAR="$ROOT/mod/runtime/build/libs/gemcrafter-0.1.0.jar"
+RUNTIME_JAR="$ROOT/mod/runtime/build/libs/red_rock-0.1.0.jar"
 MOD_JAR="$ROOT/examples/hello_gem/pkg/hello_gem-0.1.0.jar"
 KEEP=0
 BASELINE=1
@@ -25,7 +25,7 @@ EXPECT_FAILURE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --keep) KEEP=1 ;;
-    --only-gemcrafter) BASELINE=0 ;;
+    --only-red-rock) BASELINE=0 ;;
     --mod-jar) MOD_JAR="$2"; shift ;;
     --expect-failure) EXPECT_FAILURE="$2"; shift ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
@@ -109,11 +109,11 @@ run_server() {
 install_server
 
 if [[ -n "$EXPECT_FAILURE" ]]; then
-  if run_server gemcrafter "$RUNTIME_JAR" "$MOD_JAR"; then
+  if run_server red_rock "$RUNTIME_JAR" "$MOD_JAR"; then
     echo "FAIL: server started, but mod loading was expected to fail" >&2; exit 1
   fi
   # A load failure ends in a crash report; the issue text is in the console output.
-  if ! grep -qF -- "$EXPECT_FAILURE" "$RUN_LOG" "$SMOKE_DIR/gemcrafter.out"; then
+  if ! grep -qF -- "$EXPECT_FAILURE" "$RUN_LOG" "$SMOKE_DIR/red_rock.out"; then
     echo "FAIL: mod loading failed, but the output does not contain: $EXPECT_FAILURE" >&2; exit 1
   fi
   echo "PASS: mod loading failed with: $EXPECT_FAILURE"
@@ -128,13 +128,13 @@ fi
 
 # Summoning the item from the console proves it is in the item registry, not just logged.
 ON_READY_COMMAND='summon minecraft:item 0 100 0 {Item:{id:"hello_gem:ruby_shard",count:1}}' \
-  run_server gemcrafter "$RUNTIME_JAR" "$MOD_JAR" || { echo "FAIL: gemcrafter server did not start; see $RUN_LOG" >&2; exit 1; }
-for expected in '[gemcrafter] JRuby booted in' '[gemcrafter] hello_gem: registered item hello_gem:ruby_shard' \
+  run_server red_rock "$RUNTIME_JAR" "$MOD_JAR" || { echo "FAIL: red_rock server did not start; see $RUN_LOG" >&2; exit 1; }
+for expected in '[red_rock] JRuby booted in' '[red_rock] hello_gem: registered item hello_gem:ruby_shard' \
     'Summoned new item.hello_gem.ruby_shard'; do
   grep -qF -- "$expected" "$RUN_LOG" || { echo "FAIL: log is missing: $expected" >&2; exit 1; }
 done
 if grep -q 'ModLoadingException' "$RUN_LOG"; then echo "FAIL: ModLoadingException in log" >&2; exit 1; fi
 
 jruby_boot=$(grep -o 'JRuby booted in [0-9]*' "$RUN_LOG" | grep -o '[0-9]*$')
-echo "baseline=${baseline}s gemcrafter=${RUN_SECONDS}s delta=$(elapsed "$RUN_SECONDS" "$baseline")s jruby_boot=${jruby_boot}ms"
-echo "peak_rss baseline=${baseline_rss}MB gemcrafter=${RUN_RSS_MB}MB delta=$(( RUN_RSS_MB - baseline_rss ))MB"
+echo "baseline=${baseline}s red_rock=${RUN_SECONDS}s delta=$(elapsed "$RUN_SECONDS" "$baseline")s jruby_boot=${jruby_boot}ms"
+echo "peak_rss baseline=${baseline_rss}MB red_rock=${RUN_RSS_MB}MB delta=$(( RUN_RSS_MB - baseline_rss ))MB"
