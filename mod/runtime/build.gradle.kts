@@ -26,7 +26,7 @@ dependencies {
     // Plain JUnit, not MDG's unitTest (which boots the whole game): add the few
     // Minecraft-provided libraries the runtime uses, at Minecraft 1.21.1's versions.
     testRuntimeOnly("org.slf4j:slf4j-simple:2.0.9")
-    testRuntimeOnly("com.google.code.gson:gson:2.10.1")
+    testImplementation("com.google.code.gson:gson:2.10.1")
 }
 
 tasks.test {
@@ -36,6 +36,9 @@ tasks.test {
 // The Ruby API in gem/lib is the single source of truth; the runtime ships it as
 // classpath resources so JRuby's `require "gemcrafter"` loads the same code the CLI uses.
 tasks.processResources {
+    val props = mapOf("gemcrafter_version" to project.version)
+    inputs.properties(props)
+    filesMatching("META-INF/neoforge.mods.toml") { expand(props) }
     from("../../gem/lib") {
         into("gemcrafter/lib")
         exclude("gemcrafter/cli.rb", "gemcrafter/cli/**")
