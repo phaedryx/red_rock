@@ -6,3 +6,4 @@ vendor/
 build/
 .gradle/
 logs/
+notes/
