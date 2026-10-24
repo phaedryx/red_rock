@@ -24,6 +24,7 @@ Gemspec/DevelopmentDependencies:
 
 Metrics/MethodLength:
   Max: 16
+  CountAsOne: ["heredoc"]
   Exclude:
     - "test/**/*"
 
