@@ -3,6 +3,7 @@
 module Gemcrafter
   module Mod
     CONTENT_MODULES = [Item].freeze
+    TEXTURE_FILE = %r{\A[^/\\]+\.png\z}i
 
     class << self
       # Keyed by class name, so re-evaluating a mod's file replaces its entry.
@@ -73,7 +74,7 @@ module Gemcrafter
       private
 
       def item_manifest(item)
-        { "id" => item.id, "texture" => item.texture, "stack_size" => item.stack_size,
+        { "id" => item.id.to_s, "texture" => item.texture, "stack_size" => item.stack_size,
           "display_name" => item.display_name }
       end
     end
@@ -103,7 +104,7 @@ module Gemcrafter
         fail! %(`#{@mod.name}` needs an id (id "#{Naming.snake(module_name)}")) if @mod.id.nil?
         return if Naming.valid_mod_id?(@mod.id)
 
-        fail! %(mod id "#{@mod.id}" must match #{Naming::MOD_ID.source.delete_prefix('\A').delete_suffix('\z')})
+        fail! %(mod id "#{@mod.id}" must match #{pattern(Naming::MOD_ID)})
       end
 
       def check_content(content)
@@ -113,19 +114,40 @@ module Gemcrafter
         unless content.name.to_s.start_with?("#{@mod.namespace.name}::")
           fail! "`#{content.name}` must be inside `module #{module_name}`"
         end
-        return if content.texture
+        check_item(content)
+      end
 
-        fail! %(`#{content.name}` needs a texture (texture "#{content.id}.png"))
+      def check_item(item)
+        check_texture(item)
+        check_item_id(item)
+        return if item.display_name.is_a?(String)
+
+        fail! "`#{item.name}` display_name must be a String (got #{item.display_name.inspect})"
+      end
+
+      def check_texture(item)
+        fail! %(`#{item.name}` needs a texture (texture "#{item.id}.png")) unless item.texture
+        return if item.texture.is_a?(String) && TEXTURE_FILE.match?(item.texture)
+
+        fail! "`#{item.name}` texture #{item.texture.inspect} must be a .png file name in textures/"
+      end
+
+      def check_item_id(item)
+        id = item.id.is_a?(Symbol) ? item.id.to_s : item.id
+        return if id.is_a?(String) && Naming.valid_path?(id)
+
+        fail! "`#{item.name}` id #{id.inspect} must match #{pattern(Naming::PATH)}"
       end
 
       def check_duplicates
-        @mod.contents.group_by(&:id).each do |id, classes|
+        @mod.contents.group_by { |content| content.id.to_s }.each do |id, classes|
           next if classes.size < 2
 
           fail! "duplicate id #{@mod.id}:#{id} (#{classes.map(&:name).join(', ')})"
         end
       end
 
+      def pattern(regexp) = regexp.source.delete_prefix('\A').delete_suffix('\z')
       def module_name = Naming.last_segment(@mod.namespace)
       def camelize(id) = id.split("_").map(&:capitalize).join
       def fail!(message) = raise(DefinitionError, message)

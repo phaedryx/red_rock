@@ -19,7 +19,9 @@ module Gemcrafter
 
       def stack_size(size = nil)
         return @stack_size || 64 if size.nil?
-        raise DefinitionError, "stack_size must be 1..99 (got #{size.inspect})" unless STACK_SIZES.cover?(size)
+        unless size.is_a?(Integer) && STACK_SIZES.cover?(size)
+          raise DefinitionError, "stack_size must be 1..99 (got #{size.inspect})"
+        end
 
         @stack_size = size
       end

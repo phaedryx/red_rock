@@ -103,6 +103,43 @@ class ModTest < Minitest::Test
     assert_equal '`HelloGem::RubyShard` needs a texture (texture "ruby_shard.png")', err.message
   end
 
+  def test_symbol_item_id_is_accepted
+    hello_gem
+    HelloGem::RubyShard.id :shard
+    assert_equal "shard", HelloGem::Mod.manifest["items"].first["id"]
+  end
+
+  def test_invalid_item_id
+    [["Ruby Shard", '"Ruby Shard"'], ["RubyShard", '"RubyShard"'], [42, "42"]].each do |bad, shown|
+      hello_gem
+      HelloGem::RubyShard.id bad
+      err = assert_raises(Gemcrafter::DefinitionError) { HelloGem::Mod.manifest }
+      assert_equal "`HelloGem::RubyShard` id #{shown} must match [a-z0-9_]+", err.message
+    end
+  end
+
+  def test_display_name_must_be_a_string
+    hello_gem
+    HelloGem::RubyShard.display_name 42
+    err = assert_raises(Gemcrafter::DefinitionError) { HelloGem::Mod.manifest }
+    assert_equal "`HelloGem::RubyShard` display_name must be a String (got 42)", err.message
+  end
+
+  def test_texture_must_be_a_png_file_name
+    ["../lib/m.rb", "sub/ruby_shard.png", "ruby_shard.gif", :ruby_shard].each do |bad|
+      hello_gem
+      HelloGem::RubyShard.texture bad
+      err = assert_raises(Gemcrafter::DefinitionError) { HelloGem::Mod.manifest }
+      assert_equal "`HelloGem::RubyShard` texture #{bad.inspect} must be a .png file name in textures/", err.message
+    end
+  end
+
+  def test_texture_casing_is_allowed
+    hello_gem
+    HelloGem::RubyShard.texture "Ruby_Shard.PNG"
+    assert_equal "Ruby_Shard.PNG", HelloGem::Mod.manifest["items"].first["texture"]
+  end
+
   def test_duplicate_ids
     hello_gem
     HelloGem.const_set(:Other, item_class { texture "other.png" })

@@ -1,5 +1,6 @@
 package dev.gemcrafter.runtime;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public final class RubyHost {
             container.callMethod(kernel, "load", rubyRoot + "/" + entrypoint);
             Object modRegistry = container.runScriptlet("Gemcrafter::Mod");
             Object mod = container.callMethod(modRegistry, "find", modId);
-            return toManifest((Map<?, ?>) container.callMethod(mod, "manifest", Map.class));
+            return toManifest(modId, container.callMethod(mod, "manifest", Map.class));
         } catch (RuntimeException e) {
             RaiseException raise = findRaise(e);
             if (raise == null) {
@@ -70,21 +71,36 @@ public final class RubyHost {
         }
     }
 
-    private static ModManifest toManifest(Map<?, ?> manifest) {
+    private static ModManifest toManifest(String modId, Map<?, ?> manifest) {
         var items = new ArrayList<ItemSpec>();
-        for (Object item : (List<?>) manifest.get("items")) {
-            var spec = (Map<?, ?>) item;
-            items.add(new ItemSpec(
-                    (String) spec.get("id"),
-                    (String) spec.get("texture"),
-                    ((Number) spec.get("stack_size")).intValue(),
-                    (String) spec.get("display_name")));
+        if (!(manifest.get("items") instanceof List<?> list)) {
+            throw malformed(modId, "items is not an Array");
         }
-        return new ModManifest(
-                (String) manifest.get("mod_id"),
-                (String) manifest.get("version"),
-                (String) manifest.get("display_name"),
-                items);
+        for (Object item : list) {
+            if (!(item instanceof Map<?, ?> spec)) {
+                throw malformed(modId, "an item is not a Hash");
+            }
+            if (!(spec.get("stack_size") instanceof Long stackSize)) {
+                throw malformed(modId, "stack_size is not an Integer");
+            }
+            items.add(new ItemSpec(string(modId, spec, "id"), string(modId, spec, "texture"),
+                    stackSize.intValue(), string(modId, spec, "display_name")));
+        }
+        return new ModManifest(string(modId, manifest, "mod_id"), string(modId, manifest, "version"),
+                string(modId, manifest, "display_name"), items);
+    }
+
+    private static String string(String modId, Map<?, ?> map, String key) {
+        if (map.get(key) instanceof String value) {
+            return value;
+        }
+        throw malformed(modId, key + " is not a String");
+    }
+
+    /** Gemcrafter's own validation should make this unreachable; it keeps Java exceptions from authors. */
+    private static GemcrafterRubyException malformed(String modId, String problem) {
+        return new GemcrafterRubyException(
+                "Gemcrafter::DefinitionError: " + modId + "'s manifest is malformed (" + problem + ")", null);
     }
 
     private static RaiseException findRaise(Throwable e) {
@@ -116,10 +132,16 @@ public final class RubyHost {
 
     /**
      * Matches a path up to and including the mod's Ruby root, in whatever spelling JRuby reports it:
-     * {@code jar:file:/x.jar!/gemcrafter/ruby} comes back as {@code ///x.jar!/gemcrafter/ruby}, for one.
+     * {@code jar:file:/x.jar!/gemcrafter/ruby} comes back as {@code ///x.jar!/gemcrafter/ruby}, and
+     * percent-encoded characters ({@code Application%20Support}) come back decoded.
      */
     private static Pattern rootPrefix(String rubyRoot) {
-        String root = rubyRoot.replaceFirst("^(jar:)?(file:)?/*", "");
-        return Pattern.compile("[^\\s'\"(]*" + Pattern.quote(root + "/"));
+        String root = rubyRoot;
+        if (root.startsWith("jar:")) {
+            int bang = root.indexOf('!');
+            root = URI.create(root.substring("jar:".length(), bang)).getPath() + root.substring(bang);
+        }
+        root = root.replaceFirst("^/*", "");
+        return Pattern.compile("(?:(?:jar|file):)*/*" + Pattern.quote(root + "/"));
     }
 }

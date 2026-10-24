@@ -44,6 +44,17 @@ class ItemTest < Minitest::Test
     assert_match "stack_size must be 1..99", err.message
   end
 
+  def test_stack_size_must_be_an_integer
+    err = assert_raises(Gemcrafter::DefinitionError) do
+      Class.new do
+        include Gemcrafter::Item
+
+        stack_size 2.5
+      end
+    end
+    assert_equal "stack_size must be 1..99 (got 2.5)", err.message
+  end
+
   def test_stack_size_zero
     assert_raises(Gemcrafter::DefinitionError) do
       Class.new do

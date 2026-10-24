@@ -18,7 +18,11 @@ class RubyHostTest {
 
     /** Packs a fixture the way `gemcrafter build` does and returns the root Bootstrap would pass. */
     private String jarRoot(String name) throws IOException {
-        Path jar = tmp.resolve(name + "-0.1.0.jar");
+        return jarRoot(name, tmp);
+    }
+
+    private String jarRoot(String name, Path dir) throws IOException {
+        Path jar = Files.createDirectories(dir).resolve(name + "-0.1.0.jar");
         Path lib = Path.of(fixture(name), "lib");
         try (var zip = new ZipOutputStream(Files.newOutputStream(jar)); var files = Files.list(lib)) {
             for (Path file : files.toList()) {
@@ -93,6 +97,30 @@ class RubyHostTest {
         assertTrue(e.getMessage().contains("\n  from lib/raises.rb:4"), e.getMessage());
         assertFalse(e.getMessage().contains(".jar"), "jar path leaks: " + e.getMessage());
         assertFalse(e.getMessage().contains(".java"), e.getMessage());
+    }
+
+    @Test
+    void errorsFromAJarUnderAPathWithSpacesStayRelative() throws IOException {
+        // macOS launchers keep mods under "~/Library/Application Support/…".
+        Path dir = tmp.resolve("Application Support/mods");
+
+        var nameError = assertThrows(GemcrafterRubyException.class,
+                () -> RubyHost.shared().loadMod("raises", jarRoot("raises", dir), "lib/raises.rb"));
+        assertTrue(nameError.getMessage().contains("\n  from lib/raises.rb:4"), nameError.getMessage());
+
+        var syntaxError = assertThrows(GemcrafterRubyException.class,
+                () -> RubyHost.shared().loadMod("broken", jarRoot("broken", dir), "lib/broken.rb"));
+        assertTrue(syntaxError.getMessage().startsWith("SyntaxError: lib/broken.rb:3"), syntaxError.getMessage());
+        assertFalse(syntaxError.getMessage().contains("Application Support"), syntaxError.getMessage());
+    }
+
+    @Test
+    void malformedManifestIsReportedWithoutJavaExceptionNames() {
+        var e = assertThrows(GemcrafterRubyException.class,
+                () -> RubyHost.shared().loadMod("bad_manifest", fixture("bad_manifest"), "lib/bad_manifest.rb"));
+        assertTrue(e.getMessage().startsWith("Gemcrafter::DefinitionError: bad_manifest's manifest is malformed"),
+                e.getMessage());
+        assertFalse(e.getMessage().contains("ClassCastException"), e.getMessage());
     }
 
     @Test
