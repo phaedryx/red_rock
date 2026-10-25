@@ -11,7 +11,7 @@ Needs Ruby ≥ 3.2 and a JDK 21 (`JAVA_HOME`).
 cd gem && bundle install && bundle exec exe/red_rock build ../examples/hello_gem
 #    → examples/hello_gem/pkg/hello_gem-0.1.0.jar
 
-# 2. Build the red_rock runtime mod (language loader + JRuby nested inside)
+# 2. Build the red_rock runtime mod (language loader nested inside, JRuby shaded in)
 cd ../mod && ./gradlew check :runtime:jar
 #    → mod/runtime/build/libs/red_rock-0.1.0.jar
 
