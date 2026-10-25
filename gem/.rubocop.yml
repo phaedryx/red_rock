@@ -1,0 +1,37 @@
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  TargetRubyVersion: 3.2
+  Exclude:
+    - "vendor/**/*"
+    - "pkg/**/*"
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/Documentation:
+  Enabled: false
+
+Style/OneClassPerFile:
+  Exclude:
+    - "test/**/*"
+
+Naming/MethodParameterName:
+  MinNameLength: 1
+
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+Metrics/MethodLength:
+  Max: 16
+  CountAsOne: ["heredoc"]
+  Exclude:
+    - "test/**/*"
+
+Metrics/AbcSize:
+  Exclude:
+    - "test/**/*"
+
+Metrics/ClassLength:
+  Exclude:
+    - "test/**/*"

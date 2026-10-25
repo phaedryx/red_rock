@@ -1,0 +1,9 @@
+.superpowers/
+.cache/
+pkg/
+vendor/
+.bundle/
+build/
+.gradle/
+logs/
+notes/
