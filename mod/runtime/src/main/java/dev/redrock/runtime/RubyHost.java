@@ -39,9 +39,9 @@ public final class RubyHost {
 
     private static RubyHost boot() {
         long start = System.nanoTime();
+        // JRuby is shaded into red_rock's own jar, so its default class loader sees both JRuby's
+        // stdlib and red_rock's Ruby API.
         var container = new ScriptingContainer(LocalContextScope.CONCURRENT, LocalVariableBehavior.TRANSIENT);
-        container.setClassLoader(new LayeredResourceClassLoader(
-                RubyHost.class.getClassLoader(), ScriptingContainer.class.getClassLoader()));
         container.setLoadPaths(List.of("uri:classloader:/red_rock/lib"));
         container.runScriptlet("require 'red_rock'");
         LOGGER.info("[red_rock] JRuby booted in {} ms", (System.nanoTime() - start) / 1_000_000);
