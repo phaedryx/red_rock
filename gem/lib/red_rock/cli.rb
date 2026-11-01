@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative "../red_rock"
+require_relative "cli/errors"
+require_relative "cli/project"
 require_relative "cli/mods_toml"
 require_relative "cli/build"
 
