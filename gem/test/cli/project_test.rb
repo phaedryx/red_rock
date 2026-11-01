@@ -25,6 +25,12 @@ class ProjectTest < Minitest::Test
     assert_equal @root, RedRock::CLI::Project.find(File.join(@root, "lib/hello_gem/items")).root
   end
 
+  def test_find_fails_for_a_missing_folder
+    missing = File.join(@root, "lib/nope")
+    err = assert_raises(RedRock::CLI::ProjectError) { RedRock::CLI::Project.find(missing) }
+    assert_equal "there's no folder #{missing}", err.message
+  end
+
   def test_find_fails_outside_a_project
     err = assert_raises(RedRock::CLI::ProjectError) { RedRock::CLI::Project.find(@tmp) }
     assert_equal "not inside a RedRock mod (no bin/red_rock found in or above #{@tmp})", err.message

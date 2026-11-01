@@ -79,6 +79,18 @@ class CLITest < Minitest::Test
     assert_includes out, "Added ExplodingCookie to lib/boom_cookies.rb\n"
   end
 
+  def test_generate_name_with_a_space
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    project = File.join(@tmp, "boom_cookies")
+    [%w[exploding cookie], %w[big exploding cookie]].each do |words|
+      out, err, status = run_cli("generate", "item", *words, dir: project)
+      assert_equal 1, status
+      assert_empty out
+      assert_equal %(error: name "#{words.join(' ')}" can't have spaces; try "#{words.join('_')}"\n), err
+    end
+    assert_equal ["ruby_shard.rb"], Dir.children(File.join(project, "lib/boom_cookies/items"))
+  end
+
   def test_generate_outside_a_project
     _out, err, status = run_cli("generate", "item", "exploding_cookie")
     assert_equal 1, status

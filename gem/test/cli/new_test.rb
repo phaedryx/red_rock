@@ -61,6 +61,14 @@ class NewTest < Minitest::Test
     assert_equal "keep me", File.read(project("mine.txt"))
   end
 
+  def test_rejects_mod_id_ruby_already_uses
+    err = assert_raises(RedRock::CLI::ProjectError) { scaffold("data") }
+    assert_equal %(mod id "data" is a name Ruby already uses; try "data_mod"), err.message
+    err = assert_raises(RedRock::CLI::ProjectError) { scaffold("red_rock") }
+    assert_equal %(mod id "red_rock" is a name Ruby already uses; try "red_rock_mod"), err.message
+    assert_empty Dir.children(@tmp)
+  end
+
   def test_rejects_invalid_mod_id
     err = assert_raises(RedRock::CLI::ProjectError) { scaffold("BoomCookies") }
     assert_equal %(mod id "BoomCookies" must match [a-z][a-z0-9_]{1,63} (try "boom_cookies")), err.message

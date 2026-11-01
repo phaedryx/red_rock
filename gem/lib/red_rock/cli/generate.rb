@@ -37,7 +37,19 @@ module RedRock
         unless Naming.valid_name?(stem)
           raise GenerateError, "name \"#{@name}\" must start with a letter and use only letters, numbers and _"
         end
+
+        check_game_name!
         raise GenerateError, "#{item_file} already exists" if File.exist?(@project.path(item_file))
+      end
+
+      # The game names an item after its class, so a stem that doesn't survive
+      # the trip to a class name and back (sword_2 -> Sword2 -> sword2) would
+      # give the item a different id from its files.
+      def check_game_name!
+        game_name = Naming.snake(const)
+        return if game_name == stem
+
+        raise GenerateError, %(name "#{@name}" would be called "#{game_name}" in the game; use "#{game_name}" instead)
       end
 
       def render(rel, template, created)

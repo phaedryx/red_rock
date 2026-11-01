@@ -59,6 +59,14 @@ class GenerateTest < Minitest::Test
     assert_equal %(name "3d_glasses" must start with a letter and use only letters, numbers and _), err.message
   end
 
+  def test_rejects_name_whose_game_id_would_differ
+    err = assert_raises(RedRock::CLI::GenerateError) { generate("sword_2") }
+    assert_equal %(name "sword_2" would be called "sword2" in the game; use "sword2" instead), err.message
+    err = assert_raises(RedRock::CLI::GenerateError) { generate("fizzy__pop") }
+    assert_equal %(name "fizzy__pop" would be called "fizzy_pop" in the game; use "fizzy_pop" instead), err.message
+    refute File.exist?(path("lib/hello_gem/items/sword_2.rb"))
+  end
+
   def test_rejects_unknown_kind
     err = assert_raises(RedRock::CLI::GenerateError) { generate(kind: "block") }
     assert_equal %(can't generate "block" yet (only: item)), err.message

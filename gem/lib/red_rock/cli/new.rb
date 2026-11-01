@@ -42,6 +42,10 @@ module RedRock
           message += " (try \"#{suggestion}\")" if suggestion != @mod_id && Naming.valid_mod_id?(suggestion)
           raise ProjectError, message
         end
+        # A module named Data or Time would reopen Ruby's own, and the first build would fail.
+        if Object.const_defined?(Naming.camelize(@mod_id))
+          raise ProjectError, "mod id \"#{@mod_id}\" is a name Ruby already uses; try \"#{@mod_id}_mod\""
+        end
         raise ProjectError, "#{@mod_id}/ already exists" if File.exist?(root)
       end
 
