@@ -7,6 +7,8 @@ module RedRock
     # A mod project on disk: the directory holding bin/red_rock and lib/, and
     # the one top-level .rb in lib/ that is the mod's entry file.
     class Project
+      MODULE_LINE = /^module\s+([A-Z]\w*)/
+
       def self.find(dir)
         raise ProjectError, "there's no folder #{dir}" unless File.directory?(dir)
 
@@ -35,7 +37,7 @@ module RedRock
       def mod_id = File.basename(entry_file, ".rb")
 
       def module_name
-        File.read(path(entry_file))[/^module ([A-Z]\w*)/, 1]
+        File.read(path(entry_file))[MODULE_LINE, 1]
       end
     end
   end

@@ -37,6 +37,13 @@ class CLITest < Minitest::Test
     assert_equal "error: hello_gem/ already exists\n", err
   end
 
+  def test_new_without_a_mod_id_prints_usage
+    _out, err, status = run_cli("new")
+    assert_equal 1, status
+    assert_equal "error: usage: red_rock new MOD_ID\n", err
+    assert_empty Dir.children(@tmp)
+  end
+
   def test_unknown_command_prints_usage
     _out, err, status = run_cli("frobnicate")
     assert_equal 1, status

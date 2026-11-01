@@ -27,7 +27,7 @@ module RedRock
     def start(argv, out: $stdout, err: $stderr)
       command, *args = argv
       case command
-      when "new" then new_mod(args.first.to_s, out)
+      when "new" then new_mod(args.first, out)
       when "generate", "g" then generate(*args, out: out)
       when "build" then build(args.first, out)
       when "test" then TestRunner.new(project: Project.find(File.expand_path(args.first || "."))).call(out:, err:)
@@ -41,6 +41,8 @@ module RedRock
     end
 
     def new_mod(mod_id, out)
+      raise ProjectError, "usage: red_rock new MOD_ID" unless mod_id
+
       New.new(mod_id: mod_id, parent_dir: Dir.pwd).call.each { |path| out.puts "Made #{path}" }
       out.puts
       out.puts "Next: cd #{mod_id} && bin/red_rock build"
@@ -69,10 +71,9 @@ module RedRock
       raise GenerateError, "name \"#{words.join(' ')}\" can't have spaces; try \"#{words.join('_')}\""
     end
 
-    # In the order the files were considered: the item, its texture, its test.
     def made_lines(result)
-      (result.created + result.kept).sort_by { |rel| %w[lib textures test].index(rel[%r{\A[^/]+}]) }.map do |rel|
-        if result.kept.include?(rel) then "Kept #{rel} (you already drew one)"
+      result.files.map do |rel, how|
+        if how == :kept then "Kept #{rel} (you already drew one)"
         elsif rel.start_with?("textures/") then "Made #{rel} (a placeholder; draw your own 16x16 PNG over it)"
         else "Made #{rel}"
         end
@@ -84,10 +85,9 @@ module RedRock
 
       require_line = %(require_relative "#{result.require_path}")
       width = require_line.length + 3
-      module_name = project.module_name || Naming.camelize(project.mod_id)
       <<~TEXT.chomp
         Couldn't find where to add #{result.const} in #{project.entry_file}. Add these two lines yourself:
-          #{require_line.ljust(width)}(inside module #{module_name}, near the top)
+          #{require_line.ljust(width)}(inside module #{project.module_name}, near the top)
           #{result.const.ljust(width)}(on the contents line)
       TEXT
     end

@@ -10,7 +10,11 @@ module RedRock
     class Generate
       KINDS = %w[item].freeze
 
-      Result = Data.define(:created, :kept, :registered, :const, :require_path)
+      # files maps each path, in the order considered, to :made or :kept.
+      Result = Data.define(:files, :registered, :const, :require_path) do
+        def created = files.filter_map { |rel, how| rel if how == :made }
+        def kept = files.filter_map { |rel, how| rel if how == :kept }
+      end
 
       def initialize(project:, kind:, name:)
         @project = project
@@ -20,14 +24,12 @@ module RedRock
 
       def call
         check!
-        created = []
-        kept = []
-        render(item_file, "item.rb", created)
-        copy_placeholder(texture_file, created, kept)
-        render(test_file, "item_test.rb", created)
-        entry = EntryFile.new(@project.path(@project.entry_file))
-        registered = entry.add_item(require_path: require_path, const: const)
-        Result.new(created:, kept:, registered:, const:, require_path:)
+        files = {
+          item_file => render(item_file, "item.rb"),
+          texture_file => copy_placeholder(texture_file),
+          test_file => render(test_file, "item_test.rb")
+        }
+        Result.new(files:, registered: register, const:, require_path:)
       end
 
       private
@@ -40,29 +42,44 @@ module RedRock
 
         check_game_name!
         raise GenerateError, "#{item_file} already exists" if File.exist?(@project.path(item_file))
+
+        check_module_line!
+      end
+
+      # Items go inside the entry file's module; without one there's no name to put them in.
+      def check_module_line!
+        return if module_name
+
+        raise GenerateError, %(couldn't find a "module" line in #{@project.entry_file}; new items go inside that module)
       end
 
       # The game names an item after its class, so a stem that doesn't survive
       # the trip to a class name and back (sword_2 -> Sword2 -> sword2) would
       # give the item a different id from its files.
       def check_game_name!
+        raise GenerateError, %(name "#{@name}" is taken by your mod's own Mod class; pick another) if const == "Mod"
+
         game_name = Naming.snake(const)
         return if game_name == stem
 
         raise GenerateError, %(name "#{@name}" would be called "#{game_name}" in the game; use "#{game_name}" instead)
       end
 
-      def render(rel, template, created)
+      def register
+        EntryFile.new(@project.path(@project.entry_file)).add_item(require_path: require_path, const: const)
+      end
+
+      def render(rel, template)
         write(rel) { |dest| File.write(dest, Templates.render(template, **vars)) }
-        created << rel
+        :made
       end
 
       # A texture the author already drew is theirs; never paint over it.
-      def copy_placeholder(rel, created, kept)
-        return kept << rel if File.exist?(@project.path(rel))
+      def copy_placeholder(rel)
+        return :kept if File.exist?(@project.path(rel))
 
         write(rel) { |dest| FileUtils.cp(Templates.file("placeholder.png"), dest) }
-        created << rel
+        :made
       end
 
       def write(rel)
@@ -81,7 +98,7 @@ module RedRock
       def stem = @stem ||= Naming.snake(@name)
       def const = Naming.camelize(stem)
       def mod_id = @project.mod_id
-      def module_name = @project.module_name || Naming.camelize(mod_id)
+      def module_name = @module_name ||= @project.module_name
       def require_path = "#{mod_id}/items/#{stem}"
       def item_file = "lib/#{require_path}.rb"
       def texture_file = "textures/#{stem}.png"

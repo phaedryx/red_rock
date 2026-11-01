@@ -37,10 +37,10 @@ module RedRock
 
       def check!
         unless Naming.valid_mod_id?(@mod_id)
-          message = "mod id \"#{@mod_id}\" must match [a-z][a-z0-9_]{1,63}"
           suggestion = Naming.snake(@mod_id)
-          message += " (try \"#{suggestion}\")" if suggestion != @mod_id && Naming.valid_mod_id?(suggestion)
-          raise ProjectError, message
+          try = "; try \"#{suggestion}\"" if suggestion != @mod_id && Naming.valid_mod_id?(suggestion)
+          raise ProjectError, "mod id \"#{@mod_id}\" must start with a lowercase letter and use only " \
+                              "lowercase letters, numbers and _ (2 to 64 of them#{try})"
         end
         # A module named Data or Time would reopen Ruby's own, and the first build would fail.
         if Object.const_defined?(Naming.camelize(@mod_id))
