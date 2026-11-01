@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.2.0"
   spec.metadata["rubygems_mfa_required"] = "true"
 
-  spec.files = Dir["lib/**/*.rb", "exe/*"]
+  spec.files = Dir["lib/**/*", "exe/*"].reject { |f| File.directory?(f) }
   spec.bindir = "exe"
   spec.executables = ["red_rock"]
   spec.require_paths = ["lib"]

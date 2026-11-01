@@ -1,0 +1,19 @@
+# frozen_string_literal: true
+
+module <%= module_name %>
+  # An item is something you can hold in your hand.
+  # In the game it's called <%= mod_id %>:<%= stem %>.
+  class <%= class_name %>
+    include RedRock::Item # this line makes it an item; leave it in
+
+    # The picture for this item: a 16 by 16 pixel PNG in the textures/ folder.
+    texture "<%= texture %>"
+
+    # The name players see. Delete this line and RedRock makes one
+    # from the class name ("<%= display_name %>").
+    display_name "<%= display_name %>"
+
+    # How many fit in one stack. 1 to 99; 64 is normal.
+    stack_size 64
+  end
+end

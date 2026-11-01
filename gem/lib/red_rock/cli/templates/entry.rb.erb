@@ -1,0 +1,22 @@
+# frozen_string_literal: true
+
+# Everything in your mod lives inside this module.
+# In the game, <%= module_name %>::<%= class_name %> is called <%= mod_id %>:<%= stem %>.
+module <%= module_name %>
+  # Each thing you add gets its own file under lib/<%= mod_id %>/.
+  # Run `bin/red_rock generate item <name>` to add one; it also adds the line here.
+  require_relative "<%= require_path %>"
+
+  class Mod
+    include RedRock::Mod
+
+    id "<%= mod_id %>"
+    # version "0.1.0"
+    # display_name "<%= mod_display_name %>"
+    # license "All Rights Reserved"
+
+    # Only things listed here exist in the game.
+    # The generator adds each new one; you can also type them in yourself.
+    contents <%= class_name %>
+  end
+end
