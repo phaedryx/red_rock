@@ -48,6 +48,62 @@ class CLITest < Minitest::Test
     USAGE
   end
 
+  def test_generate_prints_made_and_next
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    out, err, status = run_cli("generate", "item", "exploding_cookie", dir: File.join(@tmp, "boom_cookies/lib"))
+    assert_equal 0, status, err
+    assert_equal <<~OUT, out
+      Made lib/boom_cookies/items/exploding_cookie.rb
+      Made textures/exploding_cookie.png (a placeholder; draw your own 16x16 PNG over it)
+      Made test/items/exploding_cookie_test.rb
+      Added ExplodingCookie to lib/boom_cookies.rb
+
+      Next: bin/red_rock build
+    OUT
+  end
+
+  def test_generate_says_when_a_texture_is_kept
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    project = File.join(@tmp, "boom_cookies")
+    FileUtils.cp(File.join(project, "textures/ruby_shard.png"), File.join(project, "textures/exploding_cookie.png"))
+    out, = run_cli("generate", "item", "exploding_cookie", project)
+    assert_includes out, "Made lib/boom_cookies/items/exploding_cookie.rb\n" \
+                         "Kept textures/exploding_cookie.png (you already drew one)\n" \
+                         "Made test/items/exploding_cookie_test.rb\n"
+  end
+
+  def test_g_is_an_alias
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    out, err, status = run_cli("g", "item", "ExplodingCookie", "boom_cookies")
+    assert_equal 0, status, err
+    assert_includes out, "Added ExplodingCookie to lib/boom_cookies.rb\n"
+  end
+
+  def test_generate_outside_a_project
+    _out, err, status = run_cli("generate", "item", "exploding_cookie")
+    assert_equal 1, status
+    assert err.start_with?("error: not inside a RedRock mod (no bin/red_rock found in or above "), err
+    assert_equal 1, err.lines.size
+  end
+
+  def test_generate_with_unedited_entry_exits_zero
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    entry = File.join(@tmp, "boom_cookies/lib/boom_cookies.rb")
+    File.write(entry, File.read(entry).sub("contents RubyShard", "contents RubyShard,\n             Other"))
+    out, err, status = run_cli("generate", "item", "exploding_cookie", dir: File.join(@tmp, "boom_cookies"))
+    assert_equal 0, status, err
+    assert_equal <<~OUT, out
+      Made lib/boom_cookies/items/exploding_cookie.rb
+      Made textures/exploding_cookie.png (a placeholder; draw your own 16x16 PNG over it)
+      Made test/items/exploding_cookie_test.rb
+      Couldn't find where to add ExplodingCookie in lib/boom_cookies.rb. Add these two lines yourself:
+        require_relative "boom_cookies/items/exploding_cookie"   (inside module BoomCookies, near the top)
+        ExplodingCookie                                          (on the contents line)
+
+      Next: bin/red_rock build
+    OUT
+  end
+
   private
 
   def run_cli(*argv, dir: @tmp)
