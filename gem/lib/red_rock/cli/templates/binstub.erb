@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# This runs RedRock's commands for this mod: bin/red_rock build, bin/red_rock generate ...
+# You don't need to change it.
+begin
+  require "red_rock/cli"
+rescue LoadError
+  warn "RedRock isn't installed. Run:  gem install red_rock"
+  exit 1
+end
+
+exit RedRock::CLI.start(ARGV)

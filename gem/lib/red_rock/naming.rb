@@ -4,6 +4,7 @@ module RedRock
   module Naming
     MOD_ID = /\A[a-z][a-z0-9_]{1,63}\z/
     PATH = /\A[a-z0-9_]+\z/
+    NAME = /\A[a-z][a-z0-9_]*\z/
 
     module_function
 
@@ -17,6 +18,11 @@ module RedRock
       snake(name).split("_").map(&:capitalize).join(" ")
     end
 
+    def camelize(name)
+      name.split("_").map(&:capitalize).join
+    end
+
+    def valid_name?(name) = NAME.match?(name)
     def valid_mod_id?(id) = MOD_ID.match?(id)
     def valid_path?(path) = PATH.match?(path)
 

@@ -18,6 +18,18 @@ class NamingTest < Minitest::Test
     refute RedRock::Naming.valid_path?("Ruby_Shard")
   end
 
+  def test_camelize
+    assert_equal "ExplodingCookie", RedRock::Naming.camelize("exploding_cookie")
+    assert_equal "Tnt", RedRock::Naming.camelize("tnt")
+  end
+
+  def test_valid_name
+    assert RedRock::Naming.valid_name?("exploding_cookie")
+    refute RedRock::Naming.valid_name?("3d_glasses")
+    refute RedRock::Naming.valid_name?("Exploding-Cookie")
+    refute RedRock::Naming.valid_name?("")
+  end
+
   def test_last_segment
     assert_equal "Item", RedRock::Naming.last_segment(RedRock::Item)
   end
