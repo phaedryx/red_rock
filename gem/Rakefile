@@ -2,7 +2,10 @@
 
 require "minitest/test_task"
 
-Minitest::TestTask.create
+# test/fixtures holds a scaffolded mod, whose own tests aren't the gem's.
+Minitest::TestTask.create do |t|
+  t.test_globs = Dir["test/**/*_test.rb"].reject { |f| f.start_with?("test/fixtures/") }
+end
 
 require "rubocop/rake_task"
 
