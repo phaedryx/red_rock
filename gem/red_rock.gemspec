@@ -22,9 +22,9 @@ Gem::Specification.new do |spec|
   spec.executables = ["red_rock"]
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "minitest", ">= 5.0", "< 7"
   spec.add_dependency "rubyzip", "~> 3.2"
 
-  spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rubocop", "~> 1.0"
 end

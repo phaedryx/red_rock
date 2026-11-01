@@ -9,6 +9,7 @@ require_relative "cli/templates"
 require_relative "cli/new"
 require_relative "cli/entry_file"
 require_relative "cli/generate"
+require_relative "cli/test_runner"
 
 module RedRock
   module CLI
@@ -29,6 +30,7 @@ module RedRock
       when "new" then new_mod(args.first.to_s, out)
       when "generate", "g" then generate(*args, out: out)
       when "build" then build(args.first, out)
+      when "test" then TestRunner.new(project: Project.find(File.expand_path(args.first || "."))).call(out:, err:)
       else
         err.puts USAGE
         1
