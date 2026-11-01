@@ -5,8 +5,6 @@ require "zip"
 
 module RedRock
   module CLI
-    class BuildError < StandardError; end
-
     # Writes a release jar: Ruby sources, the textures items declare, and
     # neoforge.mods.toml. Never generated JSON — the runtime adapter makes that.
     class Build
@@ -25,13 +23,7 @@ module RedRock
 
       private
 
-      def entry_file
-        entries = Dir.children(path("lib")).select { |f| f.end_with?(".rb") && File.file?(path("lib", f)) }.sort
-        return "lib/#{entries.first}" if entries.size == 1
-
-        found = entries.empty? ? "none" : entries.join(", ")
-        raise BuildError, "lib/ must contain exactly one entry file (found: #{found})"
-      end
+      def entry_file = Project.new(root: @project_dir).entry_file
 
       def load_mod(entry)
         before = Mod.all

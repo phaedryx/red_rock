@@ -66,13 +66,13 @@ class BuildTest < Minitest::Test
 
   def test_two_entry_files_fail
     File.write(File.join(@project, "lib/other.rb"), "")
-    err = assert_raises(RedRock::CLI::BuildError) { build }
+    err = assert_raises(RedRock::CLI::ProjectError) { build }
     assert_equal "lib/ must contain exactly one entry file (found: hello_gem.rb, other.rb)", err.message
   end
 
   def test_no_entry_file_fails
     File.delete(File.join(@project, "lib/hello_gem.rb"))
-    err = assert_raises(RedRock::CLI::BuildError) { build }
+    err = assert_raises(RedRock::CLI::ProjectError) { build }
     assert_equal "lib/ must contain exactly one entry file (found: none)", err.message
   end
 
