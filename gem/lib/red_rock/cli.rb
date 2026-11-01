@@ -7,6 +7,7 @@ require_relative "cli/mods_toml"
 require_relative "cli/build"
 require_relative "cli/templates"
 require_relative "cli/new"
+require_relative "cli/entry_file"
 
 module RedRock
   module CLI
