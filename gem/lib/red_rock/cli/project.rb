@@ -8,6 +8,8 @@ module RedRock
     # the one top-level .rb in lib/ that is the mod's entry file.
     class Project
       def self.find(dir)
+        raise ProjectError, "there's no folder #{dir}" unless File.directory?(dir)
+
         Pathname(dir).expand_path.ascend do |candidate|
           return new(root: candidate.to_s) if candidate.join("bin/red_rock").file? && candidate.join("lib").directory?
         end

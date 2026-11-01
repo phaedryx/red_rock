@@ -47,16 +47,26 @@ module RedRock
       0
     end
 
-    def generate(kind = nil, name = nil, dir = ".", out:)
+    def generate(kind = nil, name = nil, *rest, out:)
       raise GenerateError, "usage: #{USAGE.lines[1].strip}" unless kind && name
 
-      project = Project.find(File.expand_path(dir))
+      project = Project.find(File.expand_path(generate_dir(name, rest)))
       result = Generate.new(project: project, kind: kind, name: name).call
       out.puts made_lines(result)
       out.puts registered_lines(result, project)
       out.puts
       out.puts "Next: bin/red_rock build"
       0
+    end
+
+    # `generate item exploding cookie`: a second word that isn't a folder is
+    # part of the name, typed with a space instead of _.
+    def generate_dir(name, rest)
+      dir = rest.first || "."
+      return dir if rest.size <= 1 && File.directory?(dir)
+
+      words = [name, *rest]
+      raise GenerateError, "name \"#{words.join(' ')}\" can't have spaces; try \"#{words.join('_')}\""
     end
 
     # In the order the files were considered: the item, its texture, its test.

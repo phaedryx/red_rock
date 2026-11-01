@@ -10,6 +10,9 @@ module RedRock
       REQUIRE = /^\s*require_relative\b/
       MODULE = /^module\s+[A-Z]\w*/
       CONTENTS = /^(\s*)contents\b(.*)$/
+      # Only a plain list of class names is safe to append to: no comment,
+      # parentheses or line continuation.
+      PLAIN_LIST = /\A(?:\s+[A-Z]\w*(?:\s*,\s*[A-Z]\w*)*)?\s*\z/
 
       def initialize(path)
         @path = path
@@ -41,7 +44,7 @@ module RedRock
       def with_contents(lines, const)
         index = contents_index(lines) or return
         indent, rest = lines[index].match(CONTENTS).captures
-        return if rest.rstrip.end_with?(",", "\\")
+        return unless rest.match?(PLAIN_LIST)
         return lines if rest.match?(/\b#{const}\b/)
 
         lines.dup.tap { |edited| edited[index] = "#{indent}contents#{listed(rest, const)}\n" }

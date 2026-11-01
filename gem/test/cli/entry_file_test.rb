@@ -97,6 +97,16 @@ class EntryFileTest < Minitest::Test
     refute_changed
   end
 
+  def test_contents_with_a_comment_is_left_alone
+    write standard_entry.sub("contents RubyShard", "contents RubyShard # my items")
+    refute_changed
+  end
+
+  def test_contents_with_parentheses_is_left_alone
+    write standard_entry.sub("contents RubyShard", "contents(RubyShard)")
+    refute_changed
+  end
+
   def test_missing_module_and_requires_is_left_alone
     write "class Mod\n  contents RubyShard\nend\n"
     refute_changed
