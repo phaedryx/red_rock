@@ -8,6 +8,7 @@ require_relative "cli/build"
 require_relative "cli/templates"
 require_relative "cli/new"
 require_relative "cli/entry_file"
+require_relative "cli/generate"
 
 module RedRock
   module CLI
@@ -26,6 +27,7 @@ module RedRock
       command, *args = argv
       case command
       when "new" then new_mod(args.first.to_s, out)
+      when "generate", "g" then generate(*args, out: out)
       when "build" then build(args.first, out)
       else
         err.puts USAGE
@@ -41,6 +43,41 @@ module RedRock
       out.puts
       out.puts "Next: cd #{mod_id} && bin/red_rock build"
       0
+    end
+
+    def generate(kind = nil, name = nil, dir = ".", out:)
+      raise GenerateError, "usage: #{USAGE.lines[1].strip}" unless kind && name
+
+      project = Project.find(File.expand_path(dir))
+      result = Generate.new(project: project, kind: kind, name: name).call
+      out.puts made_lines(result)
+      out.puts registered_lines(result, project)
+      out.puts
+      out.puts "Next: bin/red_rock build"
+      0
+    end
+
+    # In the order the files were considered: the item, its texture, its test.
+    def made_lines(result)
+      (result.created + result.kept).sort_by { |rel| %w[lib textures test].index(rel[%r{\A[^/]+}]) }.map do |rel|
+        if result.kept.include?(rel) then "Kept #{rel} (you already drew one)"
+        elsif rel.start_with?("textures/") then "Made #{rel} (a placeholder; draw your own 16x16 PNG over it)"
+        else "Made #{rel}"
+        end
+      end
+    end
+
+    def registered_lines(result, project)
+      return "Added #{result.const} to #{project.entry_file}" if result.registered
+
+      require_line = %(require_relative "#{result.require_path}")
+      width = require_line.length + 3
+      module_name = project.module_name || Naming.camelize(project.mod_id)
+      <<~TEXT.chomp
+        Couldn't find where to add #{result.const} in #{project.entry_file}. Add these two lines yourself:
+          #{require_line.ljust(width)}(inside module #{module_name}, near the top)
+          #{result.const.ljust(width)}(on the contents line)
+      TEXT
     end
 
     def build(dir, out)
