@@ -5,6 +5,7 @@ AllCops:
   Exclude:
     - "vendor/**/*"
     - "pkg/**/*"
+    - "test/fixtures/**/*"
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes

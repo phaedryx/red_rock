@@ -1,0 +1,17 @@
+# Hello Gem
+
+A Minecraft mod made with RedRock.
+
+## Commands
+
+    bin/red_rock build                    # make the mod jar (it lands in pkg/)
+    bin/red_rock generate item <name>     # add a new item
+    bin/red_rock test                     # check everything is wired up
+
+## Where things go
+
+- `lib/hello_gem/items/` — one file per item
+- `textures/` — the pictures, 16×16 PNGs
+- `test/` — tests, one per item
+
+To play it, put `pkg/hello_gem-0.1.0.jar` and the RedRock jar in your Minecraft `mods/` folder.

@@ -23,5 +23,22 @@ cd .. && scripts/smoke-server.sh
 To see the item in game, put both jars in a NeoForge 21.1.264 client's `mods/` folder. **Ruby Shard**
 appears in the creative Ingredients tab.
 
+## Making a mod
+
+```sh
+red_rock new boom_cookies                       # a mod with one working item, Ruby Shard
+cd boom_cookies
+bin/red_rock generate item exploding_cookie     # add an item: file, placeholder texture, test, registration
+bin/red_rock build                              # → pkg/boom_cookies-0.1.0.jar
+bin/red_rock test                               # run the mod's tests
+```
+
+`examples/hello_gem` is exactly what `red_rock new hello_gem` writes; a gem test keeps the two in step.
+
+Working on red_rock itself: `RUBYLIB=$PWD/gem/lib` points a project's `bin/red_rock` at this checkout
+instead of an installed gem.
+
+## Tests
+
 Tests: `cd gem && bundle exec rake` (Minitest + RuboCop) and `cd mod && ./gradlew check` (JUnit and the
 `checkSeams` rule: no `net.minecraft`/`net.neoforged` imports outside `dev.redrock.adapter`).
