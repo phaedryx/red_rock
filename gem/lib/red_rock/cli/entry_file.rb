@@ -8,7 +8,6 @@ module RedRock
     # author what to add by hand.
     class EntryFile
       REQUIRE = /^\s*require_relative\b/
-      MODULE = /^module\s+[A-Z]\w*/
       CONTENTS = /^(\s*)contents\b(.*)$/
       # Only a plain list of class names is safe to append to: no comment,
       # parentheses or line continuation.
@@ -37,7 +36,7 @@ module RedRock
         line = %(require_relative "#{require_path}")
         return lines if lines.any? { |l| l.strip == line }
 
-        anchor = lines.rindex { |l| l.match?(REQUIRE) } || lines.index { |l| l.match?(MODULE) }
+        anchor = lines.rindex { |l| l.match?(REQUIRE) } || lines.index { |l| l.match?(Project::MODULE_LINE) }
         anchor && lines.dup.insert(anchor + 1, "  #{line}\n")
       end
 

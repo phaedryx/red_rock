@@ -71,9 +71,11 @@ class NewTest < Minitest::Test
 
   def test_rejects_invalid_mod_id
     err = assert_raises(RedRock::CLI::ProjectError) { scaffold("BoomCookies") }
-    assert_equal %(mod id "BoomCookies" must match [a-z][a-z0-9_]{1,63} (try "boom_cookies")), err.message
+    assert_equal %(mod id "BoomCookies" must start with a lowercase letter and use only lowercase letters, ) +
+                 %(numbers and _ (2 to 64 of them; try "boom_cookies")), err.message
     err = assert_raises(RedRock::CLI::ProjectError) { scaffold("x") }
-    assert_equal %(mod id "x" must match [a-z][a-z0-9_]{1,63}), err.message
+    assert_equal %(mod id "x" must start with a lowercase letter and use only lowercase letters, ) +
+                 %(numbers and _ (2 to 64 of them)), err.message
     assert_empty Dir.children(@tmp)
   end
 

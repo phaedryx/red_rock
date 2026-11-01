@@ -109,6 +109,27 @@ class GenerateTest < Minitest::Test
     assert_includes read("test/items/exploding_cookie_test.rb"), "Hello::ExplodingCookie"
   end
 
+  def test_rejects_the_name_mod
+    before = snapshot(path)
+    err = assert_raises(RedRock::CLI::GenerateError) { generate("mod") }
+    assert_equal %(name "mod" is taken by your mod's own Mod class; pick another), err.message
+    assert_equal before, snapshot(path)
+  end
+
+  def test_refuses_without_a_module_line
+    rewrite("lib/hello_gem.rb") { |src| src.sub("module HelloGem", "# module HelloGem") }
+    before = snapshot(path)
+    err = assert_raises(RedRock::CLI::GenerateError) { generate }
+    assert_equal %(couldn't find a "module" line in lib/hello_gem.rb; new items go inside that module), err.message
+    assert_equal before, snapshot(path)
+  end
+
+  def test_files_are_in_the_order_considered
+    FileUtils.cp(path("textures/ruby_shard.png"), path("textures/exploding_cookie.png"))
+    assert_equal({ "lib/hello_gem/items/exploding_cookie.rb" => :made, "textures/exploding_cookie.png" => :kept,
+                   "test/items/exploding_cookie_test.rb" => :made }, generate.files)
+  end
+
   private
 
   def generate(name = "exploding_cookie", kind: "item", root: path)
