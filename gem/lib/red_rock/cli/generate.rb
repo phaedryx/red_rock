@@ -9,6 +9,9 @@ module RedRock
     # runs before anything is written.
     class Generate
       KINDS = %w[item].freeze
+      # Class names an item can't take: each would hide the class of that name
+      # that the mod's files rely on.
+      TAKEN = { "Mod" => "your mod's own Mod class", "RedRock" => "RedRock itself" }.freeze
 
       # files maps each path, in the order considered, to :made or :kept.
       Result = Data.define(:files, :registered, :const, :require_path) do
@@ -27,7 +30,7 @@ module RedRock
         files = {
           item_file => render(item_file, "item.rb"),
           texture_file => copy_placeholder(texture_file),
-          test_file => render(test_file, "item_test.rb")
+          test_file => render_unless_there(test_file, "item_test.rb")
         }
         Result.new(files:, registered: register, const:, require_path:)
       end
@@ -57,7 +60,7 @@ module RedRock
       # the trip to a class name and back (sword_2 -> Sword2 -> sword2) would
       # give the item a different id from its files.
       def check_game_name!
-        raise GenerateError, %(name "#{@name}" is taken by your mod's own Mod class; pick another) if const == "Mod"
+        raise GenerateError, %(name "#{@name}" is taken by #{TAKEN[const]}; pick another) if TAKEN.key?(const)
 
         game_name = Naming.snake(const)
         return if game_name == stem
@@ -74,7 +77,11 @@ module RedRock
         :made
       end
 
-      # A texture the author already drew is theirs; never paint over it.
+      # A test or texture the author already made is theirs; never write over it.
+      def render_unless_there(rel, template)
+        File.exist?(@project.path(rel)) ? :kept : render(rel, template)
+      end
+
       def copy_placeholder(rel)
         return :kept if File.exist?(@project.path(rel))
 
@@ -91,12 +98,13 @@ module RedRock
       def vars
         {
           mod_id: mod_id, module_name: module_name, class_name: const, stem: stem,
-          display_name: Naming.title(stem), texture: "#{stem}.png", require_path: require_path
+          display_name: Naming.title(const), texture: "#{stem}.png", require_path: require_path
         }
       end
 
       def stem = @stem ||= Naming.snake(@name)
-      def const = Naming.camelize(stem)
+      # The capitals as typed when the name is already a class name (TNT stays TNT).
+      def const = @name.match?(/\A[A-Z][A-Za-z0-9]*\z/) ? @name : Naming.camelize(stem)
       def mod_id = @project.mod_id
       def module_name = @module_name ||= @project.module_name
       def require_path = "#{mod_id}/items/#{stem}"

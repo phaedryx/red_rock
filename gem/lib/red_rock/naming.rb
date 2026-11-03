@@ -14,8 +14,10 @@ module RedRock
           .downcase
     end
 
+    # "RubyShard" and "ruby_shard" -> "Ruby Shard"; acronyms stay: "TNT", "HTTP Server".
     def title(name)
-      snake(name).split("_").map(&:capitalize).join(" ")
+      words = name.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2').gsub(/([a-z\d])([A-Z])/, '\1_\2').split("_")
+      words.map { |word| word.match?(/\A[A-Z\d]+\z/) ? word : word.capitalize }.join(" ")
     end
 
     def camelize(name)

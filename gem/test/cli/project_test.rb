@@ -41,6 +41,11 @@ class ProjectTest < Minitest::Test
   def test_mod_id = assert_equal("hello_gem", project.mod_id)
   def test_module_name = assert_equal("HelloGem", project.module_name)
 
+  def test_module_name_reads_utf8_under_any_locale
+    File.write(File.join(@root, "lib/hello_gem.rb"), "# épée\nmodule HelloGem\nend\n")
+    with_external_encoding(Encoding::US_ASCII) { assert_equal "HelloGem", project.module_name }
+  end
+
   def test_module_name_missing_is_nil
     File.write(File.join(@root, "lib/hello_gem.rb"), "# nothing here\n")
     assert_nil project.module_name
