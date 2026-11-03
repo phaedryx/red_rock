@@ -116,6 +116,35 @@ class GenerateTest < Minitest::Test
     assert_equal before, snapshot(path)
   end
 
+  # A class named RedRock inside the mod's module would hide RedRock itself.
+  def test_rejects_the_name_red_rock
+    before = snapshot(path)
+    %w[red_rock RedRock].each do |name|
+      err = assert_raises(RedRock::CLI::GenerateError) { generate(name) }
+      assert_equal %(name "#{name}" is taken by RedRock itself; pick another), err.message
+    end
+    assert_equal before, snapshot(path)
+  end
+
+  def test_keeps_an_existing_test
+    FileUtils.mkdir_p(path("test/items"))
+    File.write(path("test/items/exploding_cookie_test.rb"), "# mine\n")
+    result = generate
+    assert_equal "# mine\n", read("test/items/exploding_cookie_test.rb")
+    assert_equal :kept, result.files["test/items/exploding_cookie_test.rb"]
+  end
+
+  def test_keeps_the_capitals_typed
+    result = generate("TNT")
+    assert_equal "TNT", result.const
+    assert_equal "hello_gem/items/tnt", result.require_path
+    item = read("lib/hello_gem/items/tnt.rb")
+    assert_includes item, "  class TNT\n"
+    assert_includes item, %(display_name "TNT"\n)
+    assert_includes item, %[from the class name ("TNT")]
+    assert_includes read("lib/hello_gem.rb"), "contents RubyShard, TNT\n"
+  end
+
   def test_refuses_without_a_module_line
     rewrite("lib/hello_gem.rb") { |src| src.sub("module HelloGem", "# module HelloGem") }
     before = snapshot(path)

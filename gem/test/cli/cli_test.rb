@@ -11,7 +11,10 @@ class CLITest < Minitest::Test
     @tmp = Dir.mktmpdir
   end
 
-  def teardown = FileUtils.rm_rf(@tmp)
+  def teardown
+    Object.send(:remove_const, :BoomCookies) if Object.const_defined?(:BoomCookies, false)
+    FileUtils.rm_rf(@tmp)
+  end
 
   def test_new_prints_made_lines_and_next
     out, _err, status = run_cli("new", "hello_gem")
@@ -98,6 +101,44 @@ class CLITest < Minitest::Test
     assert_equal ["ruby_shard.rb"], Dir.children(File.join(project, "lib/boom_cookies/items"))
   end
 
+  def test_generate_says_when_a_test_is_kept
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    project = File.join(@tmp, "boom_cookies")
+    File.write(File.join(project, "test/items/exploding_cookie_test.rb"), "# mine\n")
+    out, = run_cli("generate", "item", "exploding_cookie", dir: project)
+    assert_includes out, "Kept test/items/exploding_cookie_test.rb (you already wrote one)\n"
+  end
+
+  # A path that isn't there is a mistyped folder, not the second word of a name.
+  def test_generate_into_a_missing_folder
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    %w[../mymmod ./nope lib/nope].each do |dir|
+      out, err, status = run_cli("generate", "item", "cake", dir, dir: File.join(@tmp, "boom_cookies"))
+      assert_equal 1, status
+      assert_empty out
+      assert_equal "error: there's no folder #{dir}\n", err
+    end
+  end
+
+  def test_build_from_a_subfolder
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    out, err, status = run_cli("build", dir: File.join(@tmp, "boom_cookies/lib"))
+    assert_equal 0, status, err
+    assert_match %r{/boom_cookies/pkg/boom_cookies-0\.1\.0\.jar$}, out
+    refute File.exist?(File.join(@tmp, "boom_cookies/lib/pkg"))
+  end
+
+  def test_test_runs_in_process
+    RedRock::CLI::New.new(mod_id: "boom_cookies", parent_dir: @tmp).call
+    rubylib = ENV.fetch("RUBYLIB", nil)
+    ENV["RUBYLIB"] = File.expand_path("../../lib", __dir__)
+    out, err, status = run_cli("test", dir: File.join(@tmp, "boom_cookies"))
+    assert_equal 0, status, out + err
+    assert_match(/2 runs, \d+ assertions, 0 failures, 0 errors/, out)
+  ensure
+    ENV["RUBYLIB"] = rubylib
+  end
+
   def test_generate_outside_a_project
     _out, err, status = run_cli("generate", "item", "exploding_cookie")
     assert_equal 1, status
@@ -117,9 +158,9 @@ class CLITest < Minitest::Test
       Made test/items/exploding_cookie_test.rb
       Couldn't find where to add ExplodingCookie in lib/boom_cookies.rb. Add these two lines yourself:
         require_relative "boom_cookies/items/exploding_cookie"   (inside module BoomCookies, near the top)
-        ExplodingCookie                                          (on the contents line)
+        ExplodingCookie                                          (at the end of the contents list, after a comma)
 
-      Next: bin/red_rock build
+      Next: add those two lines, then bin/red_rock build
     OUT
   end
 

@@ -6,6 +6,9 @@ class NamingTest < Minitest::Test
   def test_snake = assert_equal "ruby_shard", RedRock::Naming.snake("RubyShard")
   def test_snake_acronym = assert_equal "http_thing", RedRock::Naming.snake("HTTPThing")
   def test_title = assert_equal "Ruby Shard", RedRock::Naming.title("RubyShard")
+  def test_title_from_snake = assert_equal "Ruby Shard", RedRock::Naming.title("ruby_shard")
+  def test_title_keeps_acronyms = assert_equal "TNT", RedRock::Naming.title("TNT")
+  def test_title_splits_after_an_acronym = assert_equal "HTTP Server", RedRock::Naming.title("HTTPServer")
 
   def test_mod_ids
     assert RedRock::Naming.valid_mod_id?("hello_gem")

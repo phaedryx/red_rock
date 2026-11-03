@@ -79,20 +79,23 @@ class NewTest < Minitest::Test
     assert_empty Dir.children(@tmp)
   end
 
-  def test_matches_the_committed_example
+  def test_matches_the_committed_example_and_fixture
     scaffold
-    example = File.expand_path("../examples/hello_gem", GEM_ROOT)
-    assert_equal tree(example), tree(project)
-    tree(project).each do |rel|
-      assert_equal File.binread(File.join(example, rel)), File.binread(project(rel)), "#{rel} differs from the example"
+    [File.expand_path("../examples/hello_gem", GEM_ROOT), File.join(GEM_ROOT, "test/fixtures/hello_gem")].each do |copy|
+      assert_equal tree(copy), tree(project), copy
+      tree(project).each do |rel|
+        assert_equal File.binread(File.join(copy, rel)), File.binread(project(rel)), "#{rel} differs in #{copy}"
+      end
+      assert File.executable?(File.join(copy, "bin/red_rock")), copy
     end
-    assert File.executable?(File.join(example, "bin/red_rock"))
   end
 
-  def test_gem_ships_templates
+  def test_gem_ships_every_template
     files = Dir.chdir(GEM_ROOT) { Gem::Specification.load("red_rock.gemspec").files }
-    assert_includes files, "lib/red_rock/cli/templates/item.rb.erb"
-    assert_includes files, "lib/red_rock/cli/templates/placeholder.png"
+    dir = "lib/red_rock/cli/templates"
+    templates = Dir.children(File.join(GEM_ROOT, dir)).map { |f| "#{dir}/#{f}" }
+    assert_equal 9, templates.size
+    assert_empty templates - files
   end
 
   private

@@ -52,9 +52,7 @@ class BuildTest < Minitest::Test
     # Two renames, so this also works on case-insensitive filesystems.
     File.rename(File.join(@project, "textures/ruby_shard.png"), File.join(@project, "textures/tmp.png"))
     File.rename(File.join(@project, "textures/tmp.png"), File.join(@project, "textures/Ruby_Shard.PNG"))
-    rewrite_entry("lib/hello_gem/items/ruby_shard.rb") do |src|
-      src.sub('texture "ruby_shard.png"', 'texture "Ruby_Shard.PNG"')
-    end
+    rewrite_item { |src| src.sub('texture "ruby_shard.png"', 'texture "Ruby_Shard.PNG"') }
     entries = Zip::File.open(build) { |zip| zip.entries.map(&:name) }
     assert_includes entries, "red_rock/textures/Ruby_Shard.PNG"
     refute_includes entries, "red_rock/textures/ruby_shard.png"
@@ -101,8 +99,13 @@ class BuildTest < Minitest::Test
 
   def build = RedRock::CLI::Build.new(project_dir: @project, out_dir: @out).call
 
-  def rewrite_entry(rel = "lib/hello_gem.rb")
-    path = File.join(@project, rel)
+  def rewrite_entry
+    path = File.join(@project, "lib/hello_gem.rb")
+    File.write(path, yield(File.read(path)))
+  end
+
+  def rewrite_item
+    path = File.join(@project, "lib/hello_gem/items/ruby_shard.rb")
     File.write(path, yield(File.read(path)))
   end
 end

@@ -38,6 +38,51 @@ class EntryFileTest < Minitest::Test
     RUBY
   end
 
+  # A require that runs after `contents` can't be the anchor: the new class
+  # wouldn't exist yet when contents names it.
+  def test_ignores_requires_below_contents
+    write <<~RUBY
+      module BoomCookies
+        require_relative "boom_cookies/items/ruby_shard"
+
+        class Mod
+          contents RubyShard
+          require_relative "boom_cookies/thing"
+        end
+      end
+      require_relative "boom_cookies/after"
+    RUBY
+    assert add_item
+    assert_equal <<~RUBY, File.read(@path)
+      module BoomCookies
+        require_relative "boom_cookies/items/ruby_shard"
+        require_relative "boom_cookies/items/exploding_cookie"
+
+        class Mod
+          contents RubyShard, ExplodingCookie
+          require_relative "boom_cookies/thing"
+        end
+      end
+      require_relative "boom_cookies/after"
+    RUBY
+  end
+
+  def test_contents_above_module_is_left_alone
+    write <<~RUBY
+      contents RubyShard
+      module BoomCookies
+      end
+    RUBY
+    refute_changed
+  end
+
+  def test_reads_utf8_under_any_locale
+    write standard_entry.sub("module BoomCookies", "# épée\nmodule BoomCookies")
+    with_external_encoding(Encoding::US_ASCII) { assert add_item }
+    assert_includes File.read(@path, encoding: "UTF-8"), "# épée\n"
+    assert_includes File.read(@path), "contents RubyShard, ExplodingCookie"
+  end
+
   def test_adds_after_module_when_no_requires
     write <<~RUBY
       module BoomCookies

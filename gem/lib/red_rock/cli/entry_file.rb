@@ -19,8 +19,8 @@ module RedRock
 
       # True when the file now requires require_path and lists const; false
       # when it couldn't be edited (and wasn't).
-      def add_item(require_path:, const:) # rubocop:disable Naming/PredicateMethod
-        original = File.readlines(@path)
+      def add_item(require_path:, const:)
+        original = File.readlines(@path, encoding: "UTF-8")
         lines = with_require(original, require_path)
         lines &&= with_contents(lines, const)
         return false unless lines
@@ -36,8 +36,19 @@ module RedRock
         line = %(require_relative "#{require_path}")
         return lines if lines.any? { |l| l.strip == line }
 
-        anchor = lines.rindex { |l| l.match?(REQUIRE) } || lines.index { |l| l.match?(Project::MODULE_LINE) }
+        anchor = require_anchor(lines)
         anchor && lines.dup.insert(anchor + 1, "  #{line}\n")
+      end
+
+      # The last require_relative between the module line and contents, else
+      # the module line. A require that runs after contents would be too late:
+      # contents names the new class before it exists.
+      def require_anchor(lines)
+        mod = lines.index { |l| l.match?(Project::MODULE_LINE) }
+        contents = contents_index(lines)
+        return unless mod && contents && mod < contents
+
+        ((mod + 1)...contents).reverse_each.find { |i| lines[i].match?(REQUIRE) } || mod
       end
 
       def with_contents(lines, const)

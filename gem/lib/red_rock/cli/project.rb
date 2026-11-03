@@ -37,7 +37,7 @@ module RedRock
       def mod_id = File.basename(entry_file, ".rb")
 
       def module_name
-        File.read(path(entry_file))[MODULE_LINE, 1]
+        File.read(path(entry_file), encoding: "UTF-8")[MODULE_LINE, 1]
       end
     end
   end
