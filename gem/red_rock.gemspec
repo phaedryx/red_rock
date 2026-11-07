@@ -17,14 +17,14 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.2.0"
   spec.metadata["rubygems_mfa_required"] = "true"
 
-  spec.files = Dir["lib/**/*.rb", "exe/*"]
+  spec.files = Dir["lib/**/*", "exe/*"].reject { |f| File.directory?(f) }
   spec.bindir = "exe"
   spec.executables = ["red_rock"]
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "minitest", ">= 5.0", "< 7"
   spec.add_dependency "rubyzip", "~> 3.2"
 
-  spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rubocop", "~> 1.0"
 end

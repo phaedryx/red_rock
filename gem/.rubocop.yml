@@ -5,6 +5,7 @@ AllCops:
   Exclude:
     - "vendor/**/*"
     - "pkg/**/*"
+    - "test/fixtures/**/*"
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
@@ -15,6 +16,12 @@ Style/Documentation:
 Style/OneClassPerFile:
   Exclude:
     - "test/**/*"
+
+# EntryFile#add_item edits a file and reports whether it could.
+Naming/PredicateMethod:
+  AllowedMethods:
+    - call
+    - add_item
 
 Naming/MethodParameterName:
   MinNameLength: 1

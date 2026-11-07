@@ -27,7 +27,7 @@ class BuildTest < Minitest::Test
     assert_equal File.join(@out, "hello_gem-0.1.0.jar"), jar
     entries = Zip::File.open(jar) { |zip| zip.entries.map(&:name).reject { |n| n.end_with?("/") } }
     assert_equal %w[META-INF/MANIFEST.MF META-INF/neoforge.mods.toml red_rock/ruby/lib/hello_gem.rb
-                    red_rock/textures/ruby_shard.png].sort, entries.sort
+                    red_rock/ruby/lib/hello_gem/items/ruby_shard.rb red_rock/textures/ruby_shard.png].sort, entries.sort
     assert(entries.none? { |n| n.end_with?(".json") })
   end
 
@@ -52,7 +52,7 @@ class BuildTest < Minitest::Test
     # Two renames, so this also works on case-insensitive filesystems.
     File.rename(File.join(@project, "textures/ruby_shard.png"), File.join(@project, "textures/tmp.png"))
     File.rename(File.join(@project, "textures/tmp.png"), File.join(@project, "textures/Ruby_Shard.PNG"))
-    rewrite_entry { |src| src.sub('texture "ruby_shard.png"', 'texture "Ruby_Shard.PNG"') }
+    rewrite_item { |src| src.sub('texture "ruby_shard.png"', 'texture "Ruby_Shard.PNG"') }
     entries = Zip::File.open(build) { |zip| zip.entries.map(&:name) }
     assert_includes entries, "red_rock/textures/Ruby_Shard.PNG"
     refute_includes entries, "red_rock/textures/ruby_shard.png"
@@ -66,13 +66,13 @@ class BuildTest < Minitest::Test
 
   def test_two_entry_files_fail
     File.write(File.join(@project, "lib/other.rb"), "")
-    err = assert_raises(RedRock::CLI::BuildError) { build }
+    err = assert_raises(RedRock::CLI::ProjectError) { build }
     assert_equal "lib/ must contain exactly one entry file (found: hello_gem.rb, other.rb)", err.message
   end
 
   def test_no_entry_file_fails
     File.delete(File.join(@project, "lib/hello_gem.rb"))
-    err = assert_raises(RedRock::CLI::BuildError) { build }
+    err = assert_raises(RedRock::CLI::ProjectError) { build }
     assert_equal "lib/ must contain exactly one entry file (found: none)", err.message
   end
 
@@ -101,6 +101,11 @@ class BuildTest < Minitest::Test
 
   def rewrite_entry
     path = File.join(@project, "lib/hello_gem.rb")
+    File.write(path, yield(File.read(path)))
+  end
+
+  def rewrite_item
+    path = File.join(@project, "lib/hello_gem/items/ruby_shard.rb")
     File.write(path, yield(File.read(path)))
   end
 end
